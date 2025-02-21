@@ -135,14 +135,26 @@ module Flutter
       #         and returns its future.
       #
       def pub_get
+        puts "pub_get starting for project at #{self.project_path}"
+
         future = @@current_pubgets[self]
-        return nil if !future.nil?
+        return nil unless future.nil?
+
+        puts "Concurrent::Promises.future starting"
         future = Concurrent::Promises.future do
-          stdout, stderr, status = Open3.capture3('flutter pub get', :chdir => self.project_path)
+          stdout, stderr, status = Open3.capture3('flutter pub get', chdir: self.project_path)
+          if status.success?
+        puts "flutter pub get succeeded for project at #{self.project_path}"
+          else
+        puts "flutter pub get failed for project at #{self.project_path}"
+        puts "stdout: #{stdout}"
+        puts "stderr: #{stderr}"
+          end
           :result
         end
+
         @@current_pubgets[self] = future
-        return Concurrent::Promises.zip(future, *all_dependencies.map(&:install).compact)
+        Concurrent::Promises.zip(future, *all_dependencies.map(&:install).compact)
       end
 
       # See if two {Spec} instances refer to the same pubspecs.
