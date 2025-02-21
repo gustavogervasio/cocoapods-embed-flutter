@@ -111,15 +111,26 @@ module Pod
       # @return     [void]
       #
       def pub(name = nil, *requirements)
+        Pod::UI.puts "Starting pub method with name: #{name} and requirements: #{requirements}"
         pubspec = Flutter::Pub::ExternalSources.fetchWithNameAndOptions(name, requirements)
+        Pod::UI.puts "Fetched pubspec: #{pubspec.inspect}"
+        
         Pod::UI.titled_section("Installing flutter dependencies for #{name}...",  :verbose_prefix => '-> ') do
           future = pubspec.pub_get
+          Pod::UI.puts "Running pub_get for #{name}"
           future.value! if !future.nil?
+          Pod::UI.puts "Completed pub_get for #{name}"
         end
-        raise StandardError, "Invalid flutter module: '#{name}'." unless File.exists?(pubspec.pod_helper_path)
+        
+        unless File.exists?(pubspec.pod_helper_path)
+          Pod::UI.puts "Invalid flutter module: '#{name}'. Pod helper path does not exist."
+          raise StandardError, "Invalid flutter module: '#{name}'."
+        end
+        
+        Pod::UI.puts "Installing flutter pods for pubspec: #{pubspec.inspect}"
         install_flutter_pods_for_pubspec(pubspec)
+        Pod::UI.puts "Completed installation of flutter pods for #{name}"
       end
-
       # Integrates flutter module provided in `pubspec`
       # to an Xcode project target.
       #
