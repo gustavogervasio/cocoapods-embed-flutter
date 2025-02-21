@@ -135,12 +135,10 @@ module Flutter
       #         and returns its future.
       #
       def pub_get
-        puts "pub_get starting for project at #{self.project_path}"
-
         future = @@current_pubgets[self]
         return nil unless future.nil?
 
-        puts "Concurrent::Promises.future starting"
+        puts "Concurrent::Promises.future starting for project at #{self.project_path}"
         future = Concurrent::Promises.future do
           stdout, stderr, status = Open3.capture3('flutter pub get', chdir: self.project_path)
           if status.success?
