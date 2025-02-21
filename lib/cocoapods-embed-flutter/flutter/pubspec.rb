@@ -139,17 +139,18 @@ module Flutter
         return nil unless future.nil?
 
         puts "Concurrent::Promises.future starting for project at #{self.project_path}"
-        future = Concurrent::Promises.future do
-            stdout, stderr, status = Open3.capture3('flutter pub get', chdir: self.project_path)
-            puts "Running 'flutter pub get' in #{self.project_path}"
+        Concurrent::Promises.future do
+          next if self.project_path.nil? || self.project_path.empty? || self.project_path.include?('search')
+          stdout, stderr, status = Open3.capture3('flutter pub get', chdir: self.project_path)
+          puts "Running 'flutter pub get' in #{self.project_path}"
+          puts "stdout: #{stdout}"
+          puts "stderr: #{stderr}"
+          if status.success?
+            puts "flutter pub get succeeded for project at #{self.project_path}"
+          else
+            puts "flutter pub get failed for project at #{self.project_path}"
             puts "stdout: #{stdout}"
             puts "stderr: #{stderr}"
-          if status.success?
-        puts "flutter pub get succeeded for project at #{self.project_path}"
-          else
-        puts "flutter pub get failed for project at #{self.project_path}"
-        puts "stdout: #{stdout}"
-        puts "stderr: #{stderr}"
           end
           :result
         end
