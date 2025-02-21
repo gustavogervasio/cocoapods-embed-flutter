@@ -115,7 +115,7 @@ module Pod
         pubspec = Flutter::Pub::ExternalSources.fetchWithNameAndOptions(name, requirements)
         Pod::UI.puts "Fetched pubspec: #{pubspec.inspect}"
         
-        Pod::UI.titled_section("Installing flutter panda dependencies for #{name}...",  :verbose_prefix => '-> ') do
+        Pod::UI.titled_section("Installing flutter panda2 dependencies for #{name}...",  :verbose_prefix => '-> ') do
           Pod::UI.puts "Starting to fetch pubspec for #{name}"
           future = pubspec.pub_get
           Pod::UI.puts "Running pub_get for #{name}"

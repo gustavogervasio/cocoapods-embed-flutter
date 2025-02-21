@@ -34,7 +34,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'bundler'
   spec.add_development_dependency 'rake'
 
-  spec.required_ruby_version = '>= 2.6'
+  spec.required_ruby_version = '>= 3.1'
   spec.metadata = {
     'bug_tracker_uri'   => "#{repo_url}/issues",
     'changelog_uri'     => "#{repo_url}/blob/v#{spec.version}/CHANGELOG.md",
