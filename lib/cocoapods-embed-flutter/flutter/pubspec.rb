@@ -156,6 +156,7 @@ module Flutter
         end
 
         @@current_pubgets[self] = future
+        puts "Concurrent::Promises.zip"
         Concurrent::Promises.zip(future, *all_dependencies.map(&:install).compact)
       end
 
