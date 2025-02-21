@@ -140,7 +140,10 @@ module Flutter
 
         puts "Concurrent::Promises.future starting for project at #{self.project_path}"
         future = Concurrent::Promises.future do
-          stdout, stderr, status = Open3.capture3('flutter pub get', chdir: self.project_path)
+            stdout, stderr, status = Open3.capture3('flutter pub get', chdir: self.project_path)
+            puts "Running 'flutter pub get' in #{self.project_path}"
+            puts "stdout: #{stdout}"
+            puts "stderr: #{stderr}"
           if status.success?
         puts "flutter pub get succeeded for project at #{self.project_path}"
           else
