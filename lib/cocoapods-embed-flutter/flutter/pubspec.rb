@@ -3,7 +3,6 @@ require 'yaml'
 require 'open3'
 require 'concurrent'
 require 'cocoapods'
-require 'timeout'
 
 module Flutter
   module Pub
@@ -136,58 +135,36 @@ module Flutter
       #         and returns its future.
       #
       def pub_get
+        # Verifica se já existe uma execução em andamento
         future = @@current_pubgets[self]
-        return nil unless future.nil?
+        return nil if !future.nil?  # Se já tiver uma execução, retorna nil
       
-        puts "Concurrent::Promises.future starting for project at #{self.project_path}"
-        future = Concurrent::Promises.future do
-          start_time = Time.now
-          stdout, stderr, status = Open3.capture3('flutter pub get', chdir: self.project_path)
-          elapsed_time = Time.now - start_time
-          puts "flutter pub get completed in #{elapsed_time} seconds for project at #{self.project_path}"
+        # Marca a execução como iniciada
+        @@current_pubgets[self] = true
       
-          if status.success?
-            puts "flutter pub get succeeded for project at #{self.project_path}"
-            result = { success: true, stdout: stdout, stderr: stderr }
-          else
-            puts "flutter pub get failed for project at #{self.project_path}"
-            puts "stdout: #{stdout}"
-            puts "stderr: #{stderr}"
-            result = { success: false, stdout: stdout, stderr: stderr }
-          end
-          result
+        # Executa o comando flutter pub get de forma síncrona
+        stdout, stderr, status = Open3.capture3('flutter pub get', :chdir => self.project_path)
+        
+        # Verifica se houve algum erro ao rodar o comando
+        if status.success?
+          puts "[projeto #{self.name}] Comando 'flutter pub get' executado com sucesso"
+        else
+          puts "[projeto #{self.name}] Erro ao executar 'flutter pub get': #{stderr}"
+          @@current_pubgets[self] = nil  # Marca a execução como concluída em caso de erro
+          return nil
         end
       
-        @@current_pubgets[self] = future
-        puts "Concurrent::Promises.zip starting at #{self.project_path}"
-      
-        # Logando o início e fim de cada dependência
-        all_dependencies.map(&:install).compact.each_with_index do |dependency, index|
-          begin
-            puts "Starting installation for dependency ##{index + 1}..."
-            start_time = Time.now
-            Timeout.timeout(20) do  # 20 segundos de timeout
-              result = dependency  # Atribuindo o valor corretamente
-            end
-            elapsed_time = Time.now - start_time
-            puts "Dependency ##{index + 1} installed in #{elapsed_time} seconds"
-            puts "Result for dependency ##{index + 1}: #{result.inspect}"
-          rescue Timeout::Error
-            puts "Timeout reached while installing dependency ##{index + 1}."
-          rescue => e
-            puts "Error installing dependency ##{index + 1}: #{e.message}"
-            puts e.backtrace.join("\n")
-          end
+        # Executa de forma síncrona a instalação das dependências
+        all_dependencies.map(&:install).compact.each do |dep|
+          dep # Aqui você pode adicionar log ou outra ação relacionada à instalação da dependência
         end
       
-        # Log do tempo total para o zip
-        start_time = Time.now
-        result = Concurrent::Promises.zip(future, *all_dependencies.map(&:install).compact)
-        elapsed_time = Time.now - start_time
-        puts "Concurrent::Promises.zip completed in #{elapsed_time} seconds at #{self.project_path}"
-      
-        result
+        # Marca a execução como concluída
+        @@current_pubgets[self] = nil
+        
+        return :result  # Retorna o resultado final do processo
       end
+                  
       # See if two {Spec} instances refer to the same pubspecs.
       #
       # @return [Boolean] whether or not the two {Spec} instances refer to the
