@@ -135,7 +135,6 @@ module Flutter
       #         runs `flutter pub get` task in background
       #         and returns its future.
       #
-
       def pub_get
         future = @@current_pubgets[self]
         return nil unless future.nil?
@@ -146,15 +145,17 @@ module Flutter
           stdout, stderr, status = Open3.capture3('flutter pub get', chdir: self.project_path)
           elapsed_time = Time.now - start_time
           puts "flutter pub get completed in #{elapsed_time} seconds for project at #{self.project_path}"
-          
+      
           if status.success?
             puts "flutter pub get succeeded for project at #{self.project_path}"
+            result = { success: true, stdout: stdout, stderr: stderr }
           else
             puts "flutter pub get failed for project at #{self.project_path}"
             puts "stdout: #{stdout}"
             puts "stderr: #{stderr}"
+            result = { success: false, stdout: stdout, stderr: stderr }
           end
-          :result
+          result
         end
       
         @@current_pubgets[self] = future
@@ -165,14 +166,11 @@ module Flutter
           begin
             puts "Starting installation for dependency ##{index + 1}..."
             start_time = Time.now
-            # Tentando executar com timeout
-            Timeout.timeout(20) do # 20 segundos de timeout, ajuste conforme necessário
-              result = dependency
+            Timeout.timeout(20) do  # 20 segundos de timeout
+              result = dependency  # Atribuindo o valor corretamente
             end
             elapsed_time = Time.now - start_time
             puts "Dependency ##{index + 1} installed in #{elapsed_time} seconds"
-            
-            # Logando o resultado ou detalhes do que foi retornado
             puts "Result for dependency ##{index + 1}: #{result.inspect}"
           rescue Timeout::Error
             puts "Timeout reached while installing dependency ##{index + 1}."
@@ -189,7 +187,7 @@ module Flutter
         puts "Concurrent::Promises.zip completed in #{elapsed_time} seconds at #{self.project_path}"
       
         result
-      end      
+      end
       # See if two {Spec} instances refer to the same pubspecs.
       #
       # @return [Boolean] whether or not the two {Spec} instances refer to the
