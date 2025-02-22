@@ -119,6 +119,7 @@ module Pod
           Pod::UI.puts "Starting to fetch pubspec for #{name}"
           future = pubspec.pub_get
           Pod::UI.puts "Running pub_get for #{name}"
+          future.value! if !future.nil?
           Pod::UI.puts "Completed pub_get for #{name}"
         end
         
