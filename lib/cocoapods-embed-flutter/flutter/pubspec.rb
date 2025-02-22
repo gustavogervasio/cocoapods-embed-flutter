@@ -3,6 +3,7 @@ require 'yaml'
 require 'open3'
 require 'concurrent'
 require 'cocoapods'
+require 'timeout'
 
 module Flutter
   module Pub
@@ -134,6 +135,7 @@ module Flutter
       #         runs `flutter pub get` task in background
       #         and returns its future.
       #
+
       def pub_get
         future = @@current_pubgets[self]
         return nil unless future.nil?
@@ -158,23 +160,36 @@ module Flutter
         @@current_pubgets[self] = future
         puts "Concurrent::Promises.zip starting at #{self.project_path}"
       
-        # Log each dependency install
+        # Logando o início e fim de cada dependência
         all_dependencies.map(&:install).compact.each_with_index do |dependency, index|
-          puts "Starting installation for dependency ##{index + 1}"
-          start_time = Time.now
-          dependency_result = dependency
-          elapsed_time = Time.now - start_time
-          puts "Dependency ##{index + 1} installed in #{elapsed_time} seconds"
+          begin
+            puts "Starting installation for dependency ##{index + 1}..."
+            start_time = Time.now
+            # Tentando executar com timeout
+            Timeout.timeout(20) do # 20 segundos de timeout, ajuste conforme necessário
+              result = dependency
+            end
+            elapsed_time = Time.now - start_time
+            puts "Dependency ##{index + 1} installed in #{elapsed_time} seconds"
+            
+            # Logando o resultado ou detalhes do que foi retornado
+            puts "Result for dependency ##{index + 1}: #{result.inspect}"
+          rescue Timeout::Error
+            puts "Timeout reached while installing dependency ##{index + 1}."
+          rescue => e
+            puts "Error installing dependency ##{index + 1}: #{e.message}"
+            puts e.backtrace.join("\n")
+          end
         end
       
+        # Log do tempo total para o zip
         start_time = Time.now
         result = Concurrent::Promises.zip(future, *all_dependencies.map(&:install).compact)
         elapsed_time = Time.now - start_time
         puts "Concurrent::Promises.zip completed in #{elapsed_time} seconds at #{self.project_path}"
       
         result
-      end
-      
+      end      
       # See if two {Spec} instances refer to the same pubspecs.
       #
       # @return [Boolean] whether or not the two {Spec} instances refer to the
