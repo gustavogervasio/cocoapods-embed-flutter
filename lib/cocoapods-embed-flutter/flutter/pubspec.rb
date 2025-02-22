@@ -137,25 +137,44 @@ module Flutter
       def pub_get
         future = @@current_pubgets[self]
         return nil unless future.nil?
-
+      
         puts "Concurrent::Promises.future starting for project at #{self.project_path}"
         future = Concurrent::Promises.future do
+          start_time = Time.now
           stdout, stderr, status = Open3.capture3('flutter pub get', chdir: self.project_path)
+          elapsed_time = Time.now - start_time
+          puts "flutter pub get completed in #{elapsed_time} seconds for project at #{self.project_path}"
+          
           if status.success?
-        puts "flutter pub get succeeded for project at #{self.project_path}"
+            puts "flutter pub get succeeded for project at #{self.project_path}"
           else
-        puts "flutter pub get failed for project at #{self.project_path}"
-        puts "stdout: #{stdout}"
-        puts "stderr: #{stderr}"
+            puts "flutter pub get failed for project at #{self.project_path}"
+            puts "stdout: #{stdout}"
+            puts "stderr: #{stderr}"
           end
           :result
         end
-
+      
         @@current_pubgets[self] = future
-        puts "Concurrent::Promises.zip starting"
-        Concurrent::Promises.zip(future, *all_dependencies.map(&:install).compact)
+        puts "Concurrent::Promises.zip starting at #{self.project_path}"
+      
+        # Log each dependency install
+        all_dependencies.map(&:install).compact.each_with_index do |dependency, index|
+          puts "Starting installation for dependency ##{index + 1}"
+          start_time = Time.now
+          dependency_result = dependency
+          elapsed_time = Time.now - start_time
+          puts "Dependency ##{index + 1} installed in #{elapsed_time} seconds"
+        end
+      
+        start_time = Time.now
+        result = Concurrent::Promises.zip(future, *all_dependencies.map(&:install).compact)
+        elapsed_time = Time.now - start_time
+        puts "Concurrent::Promises.zip completed in #{elapsed_time} seconds at #{self.project_path}"
+      
+        result
       end
-
+      
       # See if two {Spec} instances refer to the same pubspecs.
       #
       # @return [Boolean] whether or not the two {Spec} instances refer to the
