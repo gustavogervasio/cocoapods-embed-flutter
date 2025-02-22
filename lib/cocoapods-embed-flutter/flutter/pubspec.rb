@@ -139,12 +139,9 @@ module Flutter
         future = @@current_pubgets[self]
         return nil if !future.nil?  # Se já tiver uma execução, retorna nil
       
-        # Cria um futuro para rodar o processo de forma assíncrona
         @@current_pubgets[self] = Concurrent::Future.execute do
-          # Executa o comando flutter pub get de forma síncrona
           stdout, stderr, status = Open3.capture3('flutter pub get', :chdir => self.project_path)
           
-          # Verifica se houve algum erro ao rodar o comando
           if status.success?
             puts "[projeto #{self.name}] Comando 'flutter pub get' executado com sucesso"
           else
@@ -152,12 +149,11 @@ module Flutter
             return nil
           end
           
-          # Executa de forma síncrona a instalação das dependências
           all_dependencies.map(&:install).compact.each do |dep|
-            dep # Aqui você pode adicionar log ou outra ação relacionada à instalação da dependência
+            dep
           end
       
-          :result  # Retorna o resultado final do processo
+          :result
         end
       
         return @@current_pubgets[self]  # Retorna o futuro, que pode ser checado mais tarde
